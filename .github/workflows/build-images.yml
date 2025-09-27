@@ -87,29 +87,8 @@ jobs:
 
       - name: Build single image
         run: |
-          # 创建临时配置文件，只包含当前要构建的镜像
-          temp_config=$(mktemp)
-          
-          # 提取当前镜像的配置
-          python3 -c "
-          import yaml
-          import sys
-          
-          with open('${{ github.event.inputs.config_file || 'configs/images.yaml' }}', 'r') as f:
-              configs = yaml.safe_load(f)
-          
-          target_name = '${{ matrix.config }}'
-          for config in configs:
-              if config.get('name') == target_name:
-                  print(yaml.dump([config], default_flow_style=False))
-                  break
-          " > "$temp_config"
-          
-          # 构建镜像 (使用sudo运行distrobuilder)
-          sudo ./lxc-builder "$temp_config" ${{ github.event.inputs.output_dir || 'output' }} 1
-          
-          # 清理临时文件
-          rm -f "$temp_config"
+          # 构建单个镜像
+          sudo ./lxc-builder "${{ github.event.inputs.config_file || 'configs/images.yaml' }}" ${{ github.event.inputs.output_dir || 'output' }} 1 "${{ matrix.config }}"
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
