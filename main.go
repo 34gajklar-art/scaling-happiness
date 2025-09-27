@@ -1,436 +1,222 @@
-package main
+name: Build LXC Images with SSH
 
-import (
-	"context"
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"sync"
-	"time"
+on:
+  workflow_dispatch:
+    inputs:
+      config_file:
+        description: 'Config file to use'
+        required: false
+        default: 'configs/images.yaml'
+      output_dir:
+        description: 'Output directory'
+        required: false
+        default: 'output'
+      concurrent_jobs:
+        description: 'Number of concurrent build jobs'
+        required: false
+        default: '3'
 
-	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
-)
+env:
+  GO_VERSION: '1.21'
+  DISTROBUILDER_VERSION: '3.0'
 
-// ImageConfig 定义镜像构建配置
-type ImageConfig struct {
-	Name        string            `yaml:"name"`
-	Distro      string            `yaml:"distro"`
-	Release     string            `yaml:"release"`
-	Arch        string            `yaml:"arch"`
-	Variant     string            `yaml:"variant"`
-	Packages    []string          `yaml:"packages"`
-	Files       map[string]string `yaml:"files"`
-	Actions     []Action          `yaml:"actions"`
-}
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      configs: ${{ steps.parse-configs.outputs.configs }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-// Action 定义构建动作
-type Action struct {
-	Type    string            `yaml:"type"`
-	Action  string            `yaml:"action"`
-	Options map[string]string `yaml:"options"`
-}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
-// BuildJob 定义构建任务
-type BuildJob struct {
-	Config ImageConfig
-	Output string
-	Error  error
-}
+      - name: Install distrobuilder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y snapd
+          sudo snap install distrobuilder --classic
 
-// Builder 镜像构建器
-type Builder struct {
-	configs    []ImageConfig
-	outputDir  string
-	concurrent int
-	logger     *logrus.Logger
-}
+      - name: Parse image configurations
+        id: parse-configs
+        run: |
+          # 读取配置文件并提取镜像名称
+          if [ -f "${{ github.event.inputs.config_file || 'configs/images.yaml' }}" ]; then
+            configs=$(grep -E "^\s*-\s*name:" "${{ github.event.inputs.config_file || 'configs/images.yaml' }}" | sed 's/.*name:\s*//' | tr '\n' ',' | sed 's/,$//' | sed 's/^/[/' | sed 's/$/]/' | sed 's/,/","/g' | sed 's/\[/["/' | sed 's/\]/"]/')
+            echo "configs=$configs" >> $GITHUB_OUTPUT
+          else
+            echo "configs=[\"ubuntu-20.04-ssh\", \"ubuntu-22.04-ssh\", \"debian-11-ssh\", \"debian-12-ssh\"]" >> $GITHUB_OUTPUT
+          fi
 
-// NewBuilder 创建新的构建器
-func NewBuilder(configFile, outputDir string, concurrent int) (*Builder, error) {
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
-	})
+  build-images:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config: ${{ fromJson(needs.setup.outputs.configs) }}
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-	// 读取配置文件
-	configs, err := loadConfigs(configFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load configs: %w", err)
-	}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
-	// 创建输出目录
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create output directory: %w", err)
-	}
+      - name: Install distrobuilder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y snapd
+          sudo snap install distrobuilder --classic
 
-	return &Builder{
-		configs:    configs,
-		outputDir:  outputDir,
-		concurrent: concurrent,
-		logger:     logger,
-	}, nil
-}
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y debootstrap qemu-user-static
 
-// loadConfigs 加载配置文件
-func loadConfigs(configFile string) ([]ImageConfig, error) {
-	data, err := os.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
+      - name: Build Go application
+        run: |
+          go mod download
+          go build -o lxc-builder main.go
 
-	var configs []ImageConfig
-	if err := yaml.Unmarshal(data, &configs); err != nil {
-		return nil, err
-	}
+      - name: Create output directory
+        run: mkdir -p ${{ github.event.inputs.output_dir || 'output' }}
 
-	return configs, nil
-}
+      - name: Build single image
+        run: |
+          # 创建临时配置文件，只包含当前要构建的镜像
+          temp_config=$(mktemp)
+          
+          # 提取当前镜像的配置
+          python3 -c "
+          import yaml
+          import sys
+          
+          with open('${{ github.event.inputs.config_file || 'configs/images.yaml' }}', 'r') as f:
+              configs = yaml.safe_load(f)
+          
+          target_name = '${{ matrix.config }}'
+          for config in configs:
+              if config.get('name') == target_name:
+                  print(yaml.dump([config], default_flow_style=False))
+                  break
+          " > "$temp_config"
+          
+          # 构建镜像 (使用sudo运行distrobuilder)
+          sudo ./lxc-builder "$temp_config" ${{ github.event.inputs.output_dir || 'output' }} 1
+          
+          # 清理临时文件
+          rm -f "$temp_config"
 
-// BuildAll 构建所有镜像
-func (b *Builder) BuildAll(ctx context.Context) error {
-	b.logger.Info("Starting image build process...")
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.config }}-image
+          path: ${{ github.event.inputs.output_dir || 'output' }}/${{ matrix.config }}.tar.gz
+          retention-days: 30
 
-	// 创建任务通道
-	jobs := make(chan BuildJob, len(b.configs))
-	results := make(chan BuildJob, len(b.configs))
+  test-images:
+    needs: build-images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config: ${{ fromJson(needs.setup.outputs.configs) }}
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-	// 启动工作协程
-	var wg sync.WaitGroup
-	for i := 0; i < b.concurrent; i++ {
-		wg.Add(1)
-		go b.worker(ctx, i, jobs, results, &wg)
-	}
+      - name: Install LXC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lxc lxc-templates
 
-	// 发送任务
-	go func() {
-		defer close(jobs)
-		for _, config := range b.configs {
-			select {
-			case jobs <- BuildJob{Config: config}:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.config }}-image
+          path: ./images/
 
-	// 等待所有工作协程完成
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
+      - name: Import and test image
+        run: |
+          # 导入镜像
+          sudo lxc image import ./images/${{ matrix.config }}.tar.gz --alias ${{ matrix.config }}
+          
+          # 创建测试容器
+          container_name="test-${{ matrix.config }}-$$"
+          sudo lxc launch ${{ matrix.config }} "$container_name"
+          
+          # 等待容器启动
+          sleep 10
+          
+          # 测试SSH连接（如果可能）
+          if sudo lxc exec "$container_name" -- systemctl is-active ssh >/dev/null 2>&1; then
+            echo "SSH service is active in ${{ matrix.config }}"
+          else
+            echo "SSH service check failed for ${{ matrix.config }}"
+          fi
+          
+          # 测试root密码
+          if echo "password" | sudo lxc exec "$container_name" -- su - root -c "echo 'Password test successful'" >/dev/null 2>&1; then
+            echo "Root password test successful for ${{ matrix.config }}"
+          else
+            echo "Root password test failed for ${{ matrix.config }}"
+          fi
+          
+          # 清理
+          sudo lxc stop "$container_name" || true
+          sudo lxc delete "$container_name" || true
+          sudo lxc image delete ${{ matrix.config }} || true
 
-	// 收集结果
-	var errors []error
-	for result := range results {
-		if result.Error != nil {
-			b.logger.Errorf("Failed to build %s: %v", result.Config.Name, result.Error)
-			errors = append(errors, result.Error)
-		} else {
-			b.logger.Infof("Successfully built %s: %s", result.Config.Name, result.Output)
-		}
-	}
+  release:
+    needs: [build-images, test-images]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-	if len(errors) > 0 {
-		return fmt.Errorf("build failed with %d errors", len(errors))
-	}
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./release-images/
 
-	b.logger.Info("All images built successfully!")
-	return nil
-}
+      - name: Create release archive
+        run: |
+          mkdir -p release
+          find ./release-images -name "*.tar.gz" -exec cp {} release/ \;
+          cd release
+          tar -czf ../lxc-images-with-ssh-$(date +%Y%m%d-%H%M%S).tar.gz *.tar.gz
+          cd ..
 
-// worker 工作协程
-func (b *Builder) worker(ctx context.Context, id int, jobs <-chan BuildJob, results chan<- BuildJob, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	for job := range jobs {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
-		b.logger.Infof("Worker %d: Building %s", id, job.Config.Name)
-		
-		output, err := b.buildImage(ctx, job.Config)
-		job.Output = output
-		job.Error = err
-
-		select {
-		case results <- job:
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
-// buildImage 构建单个镜像
-func (b *Builder) buildImage(ctx context.Context, config ImageConfig) (string, error) {
-	// 创建临时目录
-	tempDir, err := os.MkdirTemp("", "distrobuilder-*")
-	if err != nil {
-		return "", fmt.Errorf("failed to create temp directory: %w", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	// 生成distrobuilder配置
-	configFile := filepath.Join(tempDir, "config.yaml")
-	if err := b.generateDistrobuilderConfig(config, configFile); err != nil {
-		return "", fmt.Errorf("failed to generate distrobuilder config: %w", err)
-	}
-
-	// 执行distrobuilder (使用sudo)
-	outputFile := filepath.Join(b.outputDir, fmt.Sprintf("%s.tar.gz", config.Name))
-	cmd := exec.CommandContext(ctx, "sudo", "distrobuilder", "build-lxc", configFile, outputFile)
-	cmd.Dir = tempDir
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("distrobuilder failed: %w\nOutput: %s", err, string(output))
-	}
-
-	return outputFile, nil
-}
-
-// generateDistrobuilderConfig 生成distrobuilder配置文件
-func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile string) error {
-	// 基础配置
-	imageConfig := map[string]interface{}{
-		"distribution": config.Distro,
-		"release":      config.Release,
-		"architecture": config.Arch,
-	}
-	
-	// 添加变体配置
-	if config.Variant != "" {
-		imageConfig["variant"] = config.Variant
-	}
-	
-	distrobuilderConfig := map[string]interface{}{
-		"image": imageConfig,
-	}
-	
-	// 根据发行版设置不同的源和包管理器
-	switch config.Distro {
-	case "ubuntu":
-		distrobuilderConfig["source"] = map[string]interface{}{
-			"downloader": "debootstrap",
-			"url":        "http://archive.ubuntu.com/ubuntu",
-		}
-		distrobuilderConfig["packages"] = map[string]interface{}{
-			"manager": "apt",
-			"update":  true,
-			"packages": append(config.Packages, "openssh-server", "sudo"),
-		}
-	case "debian":
-		distrobuilderConfig["source"] = map[string]interface{}{
-			"downloader": "debootstrap",
-			"url":        "http://deb.debian.org/debian",
-		}
-		distrobuilderConfig["packages"] = map[string]interface{}{
-			"manager": "apt",
-			"update":  true,
-			"packages": append(config.Packages, "openssh-server", "sudo"),
-		}
-	case "centos":
-		distrobuilderConfig["source"] = map[string]interface{}{
-			"downloader": "yum",
-			"url":        "http://mirror.centos.org/centos",
-		}
-		distrobuilderConfig["packages"] = map[string]interface{}{
-			"manager": "yum",
-			"update":  true,
-			"packages": append(config.Packages, "openssh-server", "sudo"),
-		}
-	default:
-		// 默认使用debootstrap
-		distrobuilderConfig["source"] = map[string]interface{}{
-			"downloader": "debootstrap",
-			"url":        "http://archive.ubuntu.com/ubuntu",
-		}
-		distrobuilderConfig["packages"] = map[string]interface{}{
-			"manager": "apt",
-			"update":  true,
-			"packages": append(config.Packages, "openssh-server", "sudo"),
-		}
-	}
-	
-	// 添加SSH配置文件
-	distrobuilderConfig["files"] = []map[string]interface{}{
-		{
-			"path":    "/etc/ssh/sshd_config",
-			"content": generateSSHConfig(),
-		},
-		{
-			"path":    "/etc/systemd/system/ssh.service",
-			"content": generateSSHService(),
-		},
-	}
-	
-	// 添加SSH配置动作
-	actions := []map[string]interface{}{
-		{
-			"trigger": "post-files",
-			"action":  "run",
-			"command": []string{"systemctl", "enable", "ssh"},
-		},
-		{
-			"trigger": "post-files",
-			"action":  "run",
-			"command": []string{"sh", "-c", "echo 'root:password' | chpasswd"},
-		},
-		{
-			"trigger": "post-files",
-			"action":  "run",
-			"command": []string{"sed", "-i", "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/", "/etc/ssh/sshd_config"},
-		},
-		{
-			"trigger": "post-files",
-			"action":  "run",
-			"command": []string{"sed", "-i", "s/#PasswordAuthentication yes/PasswordAuthentication yes/", "/etc/ssh/sshd_config"},
-		},
-	}
-	
-	// 根据发行版添加特定的SSH配置命令
-	if config.Distro == "centos" {
-		actions = append(actions, map[string]interface{}{
-			"trigger": "post-files",
-			"action":  "run",
-			"command": []string{"systemctl", "enable", "sshd"},
-		})
-	}
-	
-	distrobuilderConfig["actions"] = actions
-
-	// 添加自定义文件
-	for path, content := range config.Files {
-		distrobuilderConfig["files"] = append(distrobuilderConfig["files"].([]map[string]interface{}), map[string]interface{}{
-			"path":    path,
-			"content": content,
-		})
-	}
-
-	// 添加自定义动作
-	for _, action := range config.Actions {
-		distrobuilderConfig["actions"] = append(distrobuilderConfig["actions"].([]map[string]interface{}), map[string]interface{}{
-			"trigger": action.Type,
-			"action":  action.Action,
-			"command": []string{"sh", "-c", action.Options["command"]},
-		})
-	}
-
-	// 写入配置文件
-	data, err := yaml.Marshal(distrobuilderConfig)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(outputFile, data, 0644)
-}
-
-// generateSSHConfig 生成SSH配置文件内容
-func generateSSHConfig() string {
-	return `# SSH Server Configuration
-Port 22
-Protocol 2
-HostKey /etc/ssh/ssh_host_rsa_key
-HostKey /etc/ssh/ssh_host_ecdsa_key
-HostKey /etc/ssh/ssh_host_ed25519_key
-
-# Logging
-SyslogFacility AUTH
-LogLevel INFO
-
-# Authentication
-LoginGraceTime 120
-PermitRootLogin yes
-StrictModes yes
-PubkeyAuthentication yes
-PasswordAuthentication yes
-PermitEmptyPasswords no
-ChallengeResponseAuthentication no
-
-# Network
-X11Forwarding yes
-X11DisplayOffset 10
-PrintMotd no
-PrintLastLog yes
-TCPKeepAlive yes
-UsePrivilegeSeparation yes
-
-# Subsystem
-Subsystem sftp /usr/lib/openssh/sftp-server
-`
-}
-
-// generateSSHService 生成SSH服务配置
-func generateSSHService() string {
-	return `[Unit]
-Description=OpenBSD Secure Shell server
-After=network.target auditd.service
-ConditionPathExists=!/etc/ssh/sshd_not_to_be_run
-
-[Service]
-EnvironmentFile=-/etc/default/ssh
-ExecStartPre=/usr/sbin/sshd -t
-ExecStart=/usr/sbin/sshd -D $SSHD_OPTS
-ExecReload=/usr/sbin/sshd -t
-ExecReload=/bin/kill -HUP $MAINPID
-KillMode=process
-Restart=on-failure
-RestartPreventExitStatus=255
-Type=notify
-RuntimeDirectory=sshd
-RuntimeDirectoryMode=0755
-
-[Install]
-WantedBy=multi-user.target
-`
-}
-
-func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Usage: go run main.go <config.yaml> [output-dir] [concurrent-jobs]")
-	}
-
-	configFile := os.Args[1]
-	outputDir := "output"
-	concurrent := 3
-
-	if len(os.Args) > 2 {
-		outputDir = os.Args[2]
-	}
-	if len(os.Args) > 3 {
-		if c, err := fmt.Sscanf(os.Args[3], "%d", &concurrent); err != nil || c != 1 {
-			log.Fatal("Invalid concurrent jobs number")
-		}
-	}
-
-	// 检查distrobuilder是否可用
-	if _, err := exec.LookPath("distrobuilder"); err != nil {
-		log.Fatal("distrobuilder not found in PATH. Please install it first.")
-	}
-	
-	// 检查sudo是否可用
-	if _, err := exec.LookPath("sudo"); err != nil {
-		log.Fatal("sudo not found in PATH. distrobuilder requires root privileges.")
-	}
-
-	// 创建构建器
-	builder, err := NewBuilder(configFile, outputDir, concurrent)
-	if err != nil {
-		log.Fatalf("Failed to create builder: %v", err)
-	}
-
-	// 开始构建
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-	defer cancel()
-
-	if err := builder.BuildAll(ctx); err != nil {
-		log.Fatalf("Build failed: %v", err)
-	}
-
-	fmt.Println("All images built successfully!")
-}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: lxc-images-with-ssh-*.tar.gz
+          tag_name: images-${{ github.run_number }}
+          name: LXC Images with SSH - Build ${{ github.run_number }}
+          body: |
+            ## LXC Images with SSH Support
+            
+            This release contains pre-built LXC images with SSH server installed and configured.
+            
+            ### Features:
+            - SSH server installed and enabled
+            - Root login enabled with password authentication
+            - Default root password: `password`
+            - SSH service starts automatically
+            - Port 22 exposed for SSH connections
+            
+            ### Included Images:
+            ${{ needs.setup.outputs.configs }}
+            
+            ### Usage:
+            1. Import the image: `lxc image import <image-name>.tar.gz --alias <alias>`
+            2. Create container: `lxc launch <alias> <container-name>`
+            3. Connect via SSH: `ssh root@<container-ip>`
+            
+            **Note:** Please change the default password after first login!
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
