@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -175,9 +176,9 @@ func (b *Builder) buildImage(ctx context.Context, config ImageConfig) (string, e
 	}
 	defer os.RemoveAll(tempDir)
 
-	// 生成distrobuilder配置
+	// 使用模板文件生成distrobuilder配置
 	configFile := filepath.Join(tempDir, "config.yaml")
-	if err := b.generateDistrobuilderConfig(config, configFile); err != nil {
+	if err := b.generateDistrobuilderConfigFromTemplate(config, configFile); err != nil {
 		return "", fmt.Errorf("failed to generate distrobuilder config: %w", err)
 	}
 
@@ -194,7 +195,26 @@ func (b *Builder) buildImage(ctx context.Context, config ImageConfig) (string, e
 	return outputFile, nil
 }
 
-// generateDistrobuilderConfig 生成distrobuilder配置文件
+// generateDistrobuilderConfigFromTemplate 从模板生成distrobuilder配置文件
+func (b *Builder) generateDistrobuilderConfigFromTemplate(config ImageConfig, outputFile string) error {
+	// 读取模板文件
+	templateFile := filepath.Join("templates", config.Distro+".yaml")
+	templateData, err := os.ReadFile(templateFile)
+	if err != nil {
+		return fmt.Errorf("failed to read template file %s: %w", templateFile, err)
+	}
+
+	// 替换模板变量
+	content := string(templateData)
+	content = strings.ReplaceAll(content, "{{ .Release }}", config.Release)
+	content = strings.ReplaceAll(content, "{{ .Arch }}", config.Arch)
+	content = strings.ReplaceAll(content, "{{ .Variant }}", config.Variant)
+
+	// 写入配置文件
+	return os.WriteFile(outputFile, []byte(content), 0644)
+}
+
+// generateDistrobuilderConfig 生成distrobuilder配置文件 (已弃用)
 func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile string) error {
 	// 基础配置
 	imageConfig := map[string]interface{}{

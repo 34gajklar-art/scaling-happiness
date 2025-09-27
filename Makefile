@@ -77,6 +77,10 @@ run: build
 		echo "错误: 配置文件 configs/images.yaml 不存在"; \
 		exit 1; \
 	fi
+	@if [ ! -d "templates" ]; then \
+		echo "错误: 模板目录 templates 不存在"; \
+		exit 1; \
+	fi
 	@if ! command -v distrobuilder >/dev/null 2>&1; then \
 		echo "错误: distrobuilder 未安装"; \
 		echo "请运行: make install"; \

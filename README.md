@@ -18,6 +18,10 @@ lxc-images-build/
 ├── go.mod                  # Go模块依赖
 ├── configs/
 │   └── images.yaml         # 镜像构建配置文件
+├── templates/              # distrobuilder配置模板
+│   ├── ubuntu.yaml         # Ubuntu模板
+│   ├── debian.yaml         # Debian模板
+│   └── centos.yaml         # CentOS模板
 ├── .github/
 │   └── workflows/
 │       └── build-images.yml # GitHub Actions工作流
@@ -75,6 +79,8 @@ go build -o lxc-builder main.go
 # output - 输出目录
 # 3 - 并发构建任务数
 ```
+
+**注意**: 确保 `templates/` 目录存在且包含所需的模板文件。
 
 ### 4. 使用构建的镜像
 

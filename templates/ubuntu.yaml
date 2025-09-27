@@ -1,0 +1,71 @@
+image:
+  distribution: "ubuntu"
+  release: "{{ .Release }}"
+  architecture: "{{ .Arch }}"
+  variant: "{{ .Variant }}"
+
+source:
+  downloader: "debootstrap"
+  url: "http://archive.ubuntu.com/ubuntu"
+
+packages:
+  - packages:
+      - "curl"
+      - "wget"
+      - "vim"
+      - "htop"
+      - "net-tools"
+      - "git"
+      - "openssh-server"
+      - "sudo"
+    action: "install"
+
+files:
+  - path: "/etc/ssh/sshd_config"
+    content: |
+      # SSH Server Configuration
+      Port 22
+      Protocol 2
+      HostKey /etc/ssh/ssh_host_rsa_key
+      HostKey /etc/ssh/ssh_host_ecdsa_key
+      HostKey /etc/ssh/ssh_host_ed25519_key
+      
+      # Logging
+      SyslogFacility AUTH
+      LogLevel INFO
+      
+      # Authentication
+      LoginGraceTime 120
+      PermitRootLogin yes
+      StrictModes yes
+      PubkeyAuthentication yes
+      PasswordAuthentication yes
+      PermitEmptyPasswords no
+      ChallengeResponseAuthentication no
+      
+      # Network
+      X11Forwarding yes
+      X11DisplayOffset 10
+      PrintMotd no
+      PrintLastLog yes
+      TCPKeepAlive yes
+      UsePrivilegeSeparation yes
+      
+      # Subsystem
+      Subsystem sftp /usr/lib/openssh/sftp-server
+
+  - path: "/etc/motd"
+    content: |
+      Welcome to Ubuntu {{ .Release }} {{ .Variant }} LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+
+actions:
+  - trigger: "post-files"
+    action: |
+      #!/bin/bash
+      set -e
+      systemctl enable ssh
+      echo 'root:password' | chpasswd
+      sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+      sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
