@@ -222,7 +222,7 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		distrobuilderConfig["packages"] = map[string]interface{}{
 			"manager": "apt",
 			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+			"packages": append(config.Packages, "openssh-server", "sudo"),
 		}
 	case "debian":
 		distrobuilderConfig["source"] = map[string]interface{}{
@@ -232,7 +232,7 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		distrobuilderConfig["packages"] = map[string]interface{}{
 			"manager": "apt",
 			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+			"packages": append(config.Packages, "openssh-server", "sudo"),
 		}
 	case "centos":
 		distrobuilderConfig["source"] = map[string]interface{}{
@@ -242,7 +242,7 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		distrobuilderConfig["packages"] = map[string]interface{}{
 			"manager": "yum",
 			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+			"packages": append(config.Packages, "openssh-server", "sudo"),
 		}
 	default:
 		// 默认使用debootstrap
@@ -253,7 +253,7 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		distrobuilderConfig["packages"] = map[string]interface{}{
 			"manager": "apt",
 			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+			"packages": append(config.Packages, "openssh-server", "sudo"),
 		}
 	}
 	
@@ -274,22 +274,22 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		{
 			"trigger": "post-files",
 			"action":  "run",
-			"command": "systemctl enable ssh",
+			"command": []string{"systemctl", "enable", "ssh"},
 		},
 		{
 			"trigger": "post-files",
 			"action":  "run",
-			"command": "echo 'root:password' | chpasswd",
+			"command": []string{"sh", "-c", "echo 'root:password' | chpasswd"},
 		},
 		{
 			"trigger": "post-files",
 			"action":  "run",
-			"command": "sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config",
+			"command": []string{"sed", "-i", "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/", "/etc/ssh/sshd_config"},
 		},
 		{
 			"trigger": "post-files",
 			"action":  "run",
-			"command": "sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config",
+			"command": []string{"sed", "-i", "s/#PasswordAuthentication yes/PasswordAuthentication yes/", "/etc/ssh/sshd_config"},
 		},
 	}
 	
@@ -298,7 +298,7 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		actions = append(actions, map[string]interface{}{
 			"trigger": "post-files",
 			"action":  "run",
-			"command": "systemctl enable sshd",
+			"command": []string{"systemctl", "enable", "sshd"},
 		})
 	}
 	
@@ -317,7 +317,7 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		distrobuilderConfig["actions"] = append(distrobuilderConfig["actions"].([]map[string]interface{}), map[string]interface{}{
 			"trigger": action.Type,
 			"action":  action.Action,
-			"command": action.Options["command"],
+			"command": []string{"sh", "-c", action.Options["command"]},
 		})
 	}
 
