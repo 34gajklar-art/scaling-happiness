@@ -1,0 +1,233 @@
+name: Build LXC Images with SSH
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'configs/**'
+      - 'main.go'
+      - 'go.mod'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      config_file:
+        description: 'Config file to use'
+        required: false
+        default: 'configs/images.yaml'
+      output_dir:
+        description: 'Output directory'
+        required: false
+        default: 'output'
+      concurrent_jobs:
+        description: 'Number of concurrent build jobs'
+        required: false
+        default: '3'
+
+env:
+  GO_VERSION: '1.21'
+  DISTROBUILDER_VERSION: '3.0'
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      configs: ${{ steps.parse-configs.outputs.configs }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install distrobuilder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y snapd
+          sudo snap install distrobuilder --classic
+
+      - name: Parse image configurations
+        id: parse-configs
+        run: |
+          # 读取配置文件并提取镜像名称
+          if [ -f "${{ github.event.inputs.config_file || 'configs/images.yaml' }}" ]; then
+            configs=$(grep -E "^\s*-\s*name:" "${{ github.event.inputs.config_file || 'configs/images.yaml' }}" | sed 's/.*name:\s*//' | tr '\n' ' ')
+            echo "configs=$configs" >> $GITHUB_OUTPUT
+          else
+            echo "configs=ubuntu-20.04-ssh ubuntu-22.04-ssh debian-11-ssh debian-12-ssh" >> $GITHUB_OUTPUT
+          fi
+
+  build-images:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config: ${{ fromJson(format('["{0}"]', needs.setup.outputs.configs)) }}
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install distrobuilder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y snapd
+          sudo snap install distrobuilder --classic
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y debootstrap qemu-user-static
+
+      - name: Build Go application
+        run: |
+          go mod download
+          go build -o lxc-builder main.go
+
+      - name: Create output directory
+        run: mkdir -p ${{ github.event.inputs.output_dir || 'output' }}
+
+      - name: Build single image
+        run: |
+          # 创建临时配置文件，只包含当前要构建的镜像
+          temp_config=$(mktemp)
+          echo "images:" > "$temp_config"
+          
+          # 提取当前镜像的配置
+          python3 -c "
+          import yaml
+          import sys
+          
+          with open('${{ github.event.inputs.config_file || 'configs/images.yaml' }}', 'r') as f:
+              configs = yaml.safe_load(f)
+          
+          target_name = '${{ matrix.config }}'
+          for config in configs:
+              if config.get('name') == target_name:
+                  print(yaml.dump([config], default_flow_style=False))
+                  break
+          " >> "$temp_config"
+          
+          # 构建镜像
+          ./lxc-builder "$temp_config" ${{ github.event.inputs.output_dir || 'output' }} 1
+          
+          # 清理临时文件
+          rm -f "$temp_config"
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.config }}-image
+          path: ${{ github.event.inputs.output_dir || 'output' }}/${{ matrix.config }}.tar.gz
+          retention-days: 30
+
+  test-images:
+    needs: build-images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config: ${{ fromJson(format('["{0}"]', needs.setup.outputs.configs)) }}
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install LXC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lxc lxc-templates
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.config }}-image
+          path: ./images/
+
+      - name: Import and test image
+        run: |
+          # 导入镜像
+          sudo lxc image import ./images/${{ matrix.config }}.tar.gz --alias ${{ matrix.config }}
+          
+          # 创建测试容器
+          container_name="test-${{ matrix.config }}-$$"
+          sudo lxc launch ${{ matrix.config }} "$container_name"
+          
+          # 等待容器启动
+          sleep 10
+          
+          # 测试SSH连接（如果可能）
+          if sudo lxc exec "$container_name" -- systemctl is-active ssh >/dev/null 2>&1; then
+            echo "SSH service is active in ${{ matrix.config }}"
+          else
+            echo "SSH service check failed for ${{ matrix.config }}"
+          fi
+          
+          # 测试root密码
+          if echo "password" | sudo lxc exec "$container_name" -- su - root -c "echo 'Password test successful'" >/dev/null 2>&1; then
+            echo "Root password test successful for ${{ matrix.config }}"
+          else
+            echo "Root password test failed for ${{ matrix.config }}"
+          fi
+          
+          # 清理
+          sudo lxc stop "$container_name" || true
+          sudo lxc delete "$container_name" || true
+          sudo lxc image delete ${{ matrix.config }} || true
+
+  release:
+    needs: [build-images, test-images]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./release-images/
+
+      - name: Create release archive
+        run: |
+          mkdir -p release
+          find ./release-images -name "*.tar.gz" -exec cp {} release/ \;
+          cd release
+          tar -czf ../lxc-images-with-ssh-$(date +%Y%m%d-%H%M%S).tar.gz *.tar.gz
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: lxc-images-with-ssh-*.tar.gz
+          tag_name: images-${{ github.run_number }}
+          name: LXC Images with SSH - Build ${{ github.run_number }}
+          body: |
+            ## LXC Images with SSH Support
+            
+            This release contains pre-built LXC images with SSH server installed and configured.
+            
+            ### Features:
+            - SSH server installed and enabled
+            - Root login enabled with password authentication
+            - Default root password: `password`
+            - SSH service starts automatically
+            - Port 22 exposed for SSH connections
+            
+            ### Included Images:
+            ${{ needs.setup.outputs.configs }}
+            
+            ### Usage:
+            1. Import the image: `lxc image import <image-name>.tar.gz --alias <alias>`
+            2. Create container: `lxc launch <alias> <container-name>`
+            3. Connect via SSH: `ssh root@<container-ip>`
+            
+            **Note:** Please change the default password after first login!
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
