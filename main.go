@@ -181,9 +181,9 @@ func (b *Builder) buildImage(ctx context.Context, config ImageConfig) (string, e
 		return "", fmt.Errorf("failed to generate distrobuilder config: %w", err)
 	}
 
-	// 执行distrobuilder
+	// 执行distrobuilder (使用sudo)
 	outputFile := filepath.Join(b.outputDir, fmt.Sprintf("%s.tar.gz", config.Name))
-	cmd := exec.CommandContext(ctx, "distrobuilder", "build-lxc", configFile, outputFile)
+	cmd := exec.CommandContext(ctx, "sudo", "distrobuilder", "build-lxc", configFile, outputFile)
 	cmd.Dir = tempDir
 
 	output, err := cmd.CombinedOutput()
@@ -411,6 +411,11 @@ func main() {
 	// 检查distrobuilder是否可用
 	if _, err := exec.LookPath("distrobuilder"); err != nil {
 		log.Fatal("distrobuilder not found in PATH. Please install it first.")
+	}
+	
+	// 检查sudo是否可用
+	if _, err := exec.LookPath("sudo"); err != nil {
+		log.Fatal("sudo not found in PATH. distrobuilder requires root privileges.")
 	}
 
 	// 创建构建器
