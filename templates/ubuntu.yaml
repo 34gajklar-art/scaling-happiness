@@ -9,15 +9,7 @@ source:
   url: "http://archive.ubuntu.com/ubuntu"
 
 packages:
-  - packages:
-      - "curl"
-      - "wget"
-      - "vim"
-      - "htop"
-      - "net-tools"
-      - "git"
-      - "openssh-server"
-      - "sudo"
+  - packages: ["curl", "wget", "vim", "htop", "net-tools", "git", "openssh-server", "sudo"]
     action: "install"
 
 files:
