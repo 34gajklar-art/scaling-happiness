@@ -1,15 +1,6 @@
 name: Build LXC Images with SSH
 
 on:
-  push:
-    branches: [ main, master ]
-    paths:
-      - 'configs/**'
-      - 'main.go'
-      - 'go.mod'
-      - '.github/workflows/**'
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
     inputs:
       config_file:
@@ -122,7 +113,7 @@ jobs:
           rm -f "$temp_config"
 
       - name: Upload image artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.config }}-image
           path: ${{ github.event.inputs.output_dir || 'output' }}/${{ matrix.config }}.tar.gz
@@ -145,7 +136,7 @@ jobs:
           sudo apt-get install -y lxc lxc-templates
 
       - name: Download image artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.config }}-image
           path: ./images/
@@ -184,13 +175,12 @@ jobs:
   release:
     needs: [build-images, test-images]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: ./release-images/
 
