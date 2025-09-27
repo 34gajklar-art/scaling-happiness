@@ -222,7 +222,7 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		distrobuilderConfig["packages"] = map[string]interface{}{
 			"manager": "apt",
 			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+			"packages": append(config.Packages, "openssh-server", "sudo"),
 		}
 	case "debian":
 		distrobuilderConfig["source"] = map[string]interface{}{
@@ -232,7 +232,7 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		distrobuilderConfig["packages"] = map[string]interface{}{
 			"manager": "apt",
 			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+			"packages": append(config.Packages, "openssh-server", "sudo"),
 		}
 	case "centos":
 		distrobuilderConfig["source"] = map[string]interface{}{
@@ -242,7 +242,7 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		distrobuilderConfig["packages"] = map[string]interface{}{
 			"manager": "yum",
 			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+			"packages": append(config.Packages, "openssh-server", "sudo"),
 		}
 	default:
 		// 默认使用debootstrap
@@ -253,7 +253,7 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 		distrobuilderConfig["packages"] = map[string]interface{}{
 			"manager": "apt",
 			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+			"packages": append(config.Packages, "openssh-server", "sudo"),
 		}
 	}
 	
