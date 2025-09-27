@@ -219,42 +219,58 @@ func (b *Builder) generateDistrobuilderConfig(config ImageConfig, outputFile str
 			"downloader": "debootstrap",
 			"url":        "http://archive.ubuntu.com/ubuntu",
 		}
-		distrobuilderConfig["packages"] = map[string]interface{}{
-			"manager": "apt",
-			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+		// 使用官方格式的包配置
+		var packageList []map[string]interface{}
+		for _, pkg := range append(config.Packages, "openssh-server", "sudo") {
+			packageList = append(packageList, map[string]interface{}{
+				"packages": []string{pkg},
+				"action":   "install",
+			})
 		}
+		distrobuilderConfig["packages"] = packageList
 	case "debian":
 		distrobuilderConfig["source"] = map[string]interface{}{
 			"downloader": "debootstrap",
 			"url":        "http://deb.debian.org/debian",
 		}
-		distrobuilderConfig["packages"] = map[string]interface{}{
-			"manager": "apt",
-			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+		// 使用官方格式的包配置
+		var packageList []map[string]interface{}
+		for _, pkg := range append(config.Packages, "openssh-server", "sudo") {
+			packageList = append(packageList, map[string]interface{}{
+				"packages": []string{pkg},
+				"action":   "install",
+			})
 		}
+		distrobuilderConfig["packages"] = packageList
 	case "centos":
 		distrobuilderConfig["source"] = map[string]interface{}{
 			"downloader": "yum",
 			"url":        "http://mirror.centos.org/centos",
 		}
-		distrobuilderConfig["packages"] = map[string]interface{}{
-			"manager": "yum",
-			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+		// 使用官方格式的包配置
+		var packageList []map[string]interface{}
+		for _, pkg := range append(config.Packages, "openssh-server", "sudo") {
+			packageList = append(packageList, map[string]interface{}{
+				"packages": []string{pkg},
+				"action":   "install",
+			})
 		}
+		distrobuilderConfig["packages"] = packageList
 	default:
 		// 默认使用debootstrap
 		distrobuilderConfig["source"] = map[string]interface{}{
 			"downloader": "debootstrap",
 			"url":        "http://archive.ubuntu.com/ubuntu",
 		}
-		distrobuilderConfig["packages"] = map[string]interface{}{
-			"manager": "apt",
-			"update":  true,
-			"install": append(config.Packages, "openssh-server", "sudo"),
+		// 使用官方格式的包配置
+		var packageList []map[string]interface{}
+		for _, pkg := range append(config.Packages, "openssh-server", "sudo") {
+			packageList = append(packageList, map[string]interface{}{
+				"packages": []string{pkg},
+				"action":   "install",
+			})
 		}
+		distrobuilderConfig["packages"] = packageList
 	}
 	
 	// 添加SSH配置文件
