@@ -9,8 +9,14 @@ source:
   url: "http://mirror.centos.org/centos"
 
 packages:
-  - packages: ["curl", "wget", "vim", "htop", "net-tools", "openssh-clients", "openssh-server", "sudo"]
-    action: "install"
+  - "curl"
+  - "wget"
+  - "vim"
+  - "htop"
+  - "net-tools"
+  - "openssh-clients"
+  - "openssh-server"
+  - "sudo"
 
 files:
   - path: "/etc/ssh/sshd_config"

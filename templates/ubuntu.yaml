@@ -9,8 +9,14 @@ source:
   url: "http://archive.ubuntu.com/ubuntu"
 
 packages:
-  - packages: ["curl", "wget", "vim", "htop", "net-tools", "git", "openssh-server", "sudo"]
-    action: "install"
+  - "curl"
+  - "wget"
+  - "vim"
+  - "htop"
+  - "net-tools"
+  - "git"
+  - "openssh-server"
+  - "sudo"
 
 files:
   - path: "/etc/ssh/sshd_config"

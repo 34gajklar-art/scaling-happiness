@@ -9,8 +9,14 @@ source:
   url: "http://deb.debian.org/debian"
 
 packages:
-  - packages: ["curl", "wget", "vim", "htop", "net-tools", "sudo", "git", "openssh-server"]
-    action: "install"
+  - "curl"
+  - "wget"
+  - "vim"
+  - "htop"
+  - "net-tools"
+  - "sudo"
+  - "git"
+  - "openssh-server"
 
 files:
   - path: "/etc/ssh/sshd_config"
