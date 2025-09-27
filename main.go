@@ -417,12 +417,13 @@ WantedBy=multi-user.target
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatal("Usage: go run main.go <config.yaml> [output-dir] [concurrent-jobs]")
+		log.Fatal("Usage: go run main.go <config.yaml> [output-dir] [concurrent-jobs] [target-image]")
 	}
 
 	configFile := os.Args[1]
 	outputDir := "output"
 	concurrent := 3
+	targetImage := ""
 
 	if len(os.Args) > 2 {
 		outputDir = os.Args[2]
@@ -431,6 +432,9 @@ func main() {
 		if c, err := fmt.Sscanf(os.Args[3], "%d", &concurrent); err != nil || c != 1 {
 			log.Fatal("Invalid concurrent jobs number")
 		}
+	}
+	if len(os.Args) > 4 {
+		targetImage = os.Args[4]
 	}
 
 	// 检查distrobuilder是否可用
@@ -453,9 +457,35 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
-	if err := builder.BuildAll(ctx); err != nil {
-		log.Fatalf("Build failed: %v", err)
-	}
+	// 如果指定了目标镜像，只构建该镜像
+	if targetImage != "" {
+		configs, err := loadConfigs(configFile)
+		if err != nil {
+			log.Fatalf("Failed to load configs: %v", err)
+		}
 
-	fmt.Println("All images built successfully!")
+		var targetConfig *ImageConfig
+		for _, config := range configs {
+			if config.Name == targetImage {
+				targetConfig = &config
+				break
+			}
+		}
+
+		if targetConfig == nil {
+			log.Fatalf("Target image '%s' not found in config", targetImage)
+		}
+
+		output, err := builder.buildImage(ctx, *targetConfig)
+		if err != nil {
+			log.Fatalf("Build failed: %v", err)
+		}
+		fmt.Printf("Successfully built %s: %s\n", targetImage, output)
+	} else {
+		// 构建所有镜像
+		if err := builder.BuildAll(ctx); err != nil {
+			log.Fatalf("Build failed: %v", err)
+		}
+		fmt.Println("All images built successfully!")
+	}
 }
