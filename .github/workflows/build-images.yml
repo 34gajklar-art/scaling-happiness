@@ -89,7 +89,6 @@ jobs:
         run: |
           # 创建临时配置文件，只包含当前要构建的镜像
           temp_config=$(mktemp)
-          echo "images:" > "$temp_config"
           
           # 提取当前镜像的配置
           python3 -c "
@@ -104,7 +103,7 @@ jobs:
               if config.get('name') == target_name:
                   print(yaml.dump([config], default_flow_style=False))
                   break
-          " >> "$temp_config"
+          " > "$temp_config"
           
           # 构建镜像
           ./lxc-builder "$temp_config" ${{ github.event.inputs.output_dir || 'output' }} 1
