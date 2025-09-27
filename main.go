@@ -434,7 +434,7 @@ func main() {
 		}
 	}
 	if len(os.Args) > 4 {
-		targetImage = os.Args[4]
+		targetImage = strings.TrimSpace(os.Args[4])
 	}
 
 	// 检查distrobuilder是否可用
@@ -466,7 +466,7 @@ func main() {
 
 		var targetConfig *ImageConfig
 		for _, config := range configs {
-			if config.Name == targetImage {
+			if strings.TrimSpace(config.Name) == targetImage {
 				targetConfig = &config
 				break
 			}
