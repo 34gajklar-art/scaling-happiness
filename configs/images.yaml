@@ -1,0 +1,1148 @@
+# LXC镜像构建配置文件
+# 支持多个发行版，每个镜像都会安装SSH并配置root密码登录
+
+# CentOS 9-Stream
+- name: centos-9-stream-cloud-amd64-ssh
+  distro: centos
+  release: "9-Stream"
+  arch: amd64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - openssh-clients
+  files:
+    /etc/motd: |
+      Welcome to CentOS 9-Stream Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "dnf update -y"
+
+- name: centos-9-stream-cloud-arm64-ssh
+  distro: centos
+  release: "9-Stream"
+  arch: arm64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - openssh-clients
+  files:
+    /etc/motd: |
+      Welcome to CentOS 9-Stream Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "dnf update -y"
+
+- name: centos-9-stream-default-amd64-ssh
+  distro: centos
+  release: "9-Stream"
+  arch: amd64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - openssh-clients
+  files:
+    /etc/motd: |
+      Welcome to CentOS 9-Stream Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "dnf update -y"
+
+- name: centos-9-stream-default-arm64-ssh
+  distro: centos
+  release: "9-Stream"
+  arch: arm64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - openssh-clients
+  files:
+    /etc/motd: |
+      Welcome to CentOS 9-Stream Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "dnf update -y"
+
+# CentOS 10-Stream
+- name: centos-10-stream-cloud-amd64-ssh
+  distro: centos
+  release: "10-Stream"
+  arch: amd64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - openssh-clients
+  files:
+    /etc/motd: |
+      Welcome to CentOS 10-Stream Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "dnf update -y"
+
+- name: centos-10-stream-cloud-arm64-ssh
+  distro: centos
+  release: "10-Stream"
+  arch: arm64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - openssh-clients
+  files:
+    /etc/motd: |
+      Welcome to CentOS 10-Stream Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "dnf update -y"
+
+- name: centos-10-stream-default-amd64-ssh
+  distro: centos
+  release: "10-Stream"
+  arch: amd64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - openssh-clients
+  files:
+    /etc/motd: |
+      Welcome to CentOS 10-Stream Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "dnf update -y"
+
+- name: centos-10-stream-default-arm64-ssh
+  distro: centos
+  release: "10-Stream"
+  arch: arm64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - openssh-clients
+  files:
+    /etc/motd: |
+      Welcome to CentOS 10-Stream Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "dnf update -y"
+
+# Ubuntu Jammy
+- name: ubuntu-jammy-cloud-amd64-ssh
+  distro: ubuntu
+  release: jammy
+  arch: amd64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 22.04 Jammy Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-jammy-cloud-arm64-ssh
+  distro: ubuntu
+  release: jammy
+  arch: arm64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 22.04 Jammy Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-jammy-default-amd64-ssh
+  distro: ubuntu
+  release: jammy
+  arch: amd64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 22.04 Jammy Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-jammy-default-arm64-ssh
+  distro: ubuntu
+  release: jammy
+  arch: arm64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 22.04 Jammy Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-jammy-desktop-amd64-ssh
+  distro: ubuntu
+  release: jammy
+  arch: amd64
+  variant: desktop
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+    - firefox
+    - libreoffice
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 22.04 Jammy Desktop LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-jammy-desktop-arm64-ssh
+  distro: ubuntu
+  release: jammy
+  arch: arm64
+  variant: desktop
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+    - firefox
+    - libreoffice
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 22.04 Jammy Desktop LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+# Ubuntu Noble
+- name: ubuntu-noble-cloud-amd64-ssh
+  distro: ubuntu
+  release: noble
+  arch: amd64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 24.04 Noble Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-noble-cloud-arm64-ssh
+  distro: ubuntu
+  release: noble
+  arch: arm64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 24.04 Noble Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-noble-default-amd64-ssh
+  distro: ubuntu
+  release: noble
+  arch: amd64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 24.04 Noble Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-noble-default-arm64-ssh
+  distro: ubuntu
+  release: noble
+  arch: arm64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 24.04 Noble Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-noble-desktop-amd64-ssh
+  distro: ubuntu
+  release: noble
+  arch: amd64
+  variant: desktop
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+    - firefox
+    - libreoffice
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 24.04 Noble Desktop LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-noble-desktop-arm64-ssh
+  distro: ubuntu
+  release: noble
+  arch: arm64
+  variant: desktop
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+    - firefox
+    - libreoffice
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 24.04 Noble Desktop LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+# Ubuntu Oracular
+- name: ubuntu-oracular-cloud-amd64-ssh
+  distro: ubuntu
+  release: oracular
+  arch: amd64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 25.04 Oracular Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-oracular-cloud-arm64-ssh
+  distro: ubuntu
+  release: oracular
+  arch: arm64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 25.04 Oracular Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-oracular-default-amd64-ssh
+  distro: ubuntu
+  release: oracular
+  arch: amd64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 25.04 Oracular Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-oracular-default-arm64-ssh
+  distro: ubuntu
+  release: oracular
+  arch: arm64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 25.04 Oracular Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-oracular-desktop-amd64-ssh
+  distro: ubuntu
+  release: oracular
+  arch: amd64
+  variant: desktop
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+    - firefox
+    - libreoffice
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 25.04 Oracular Desktop LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-oracular-desktop-arm64-ssh
+  distro: ubuntu
+  release: oracular
+  arch: arm64
+  variant: desktop
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+    - firefox
+    - libreoffice
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 25.04 Oracular Desktop LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+# Ubuntu Plucky
+- name: ubuntu-plucky-cloud-amd64-ssh
+  distro: ubuntu
+  release: plucky
+  arch: amd64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 26.04 Plucky Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-plucky-cloud-arm64-ssh
+  distro: ubuntu
+  release: plucky
+  arch: arm64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 26.04 Plucky Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-plucky-default-amd64-ssh
+  distro: ubuntu
+  release: plucky
+  arch: amd64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 26.04 Plucky Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-plucky-default-arm64-ssh
+  distro: ubuntu
+  release: plucky
+  arch: arm64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 26.04 Plucky Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-plucky-desktop-amd64-ssh
+  distro: ubuntu
+  release: plucky
+  arch: amd64
+  variant: desktop
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+    - firefox
+    - libreoffice
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 26.04 Plucky Desktop LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: ubuntu-plucky-desktop-arm64-ssh
+  distro: ubuntu
+  release: plucky
+  arch: arm64
+  variant: desktop
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - git
+    - firefox
+    - libreoffice
+  files:
+    /etc/motd: |
+      Welcome to Ubuntu 26.04 Plucky Desktop LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+# Debian Bookworm
+- name: debian-bookworm-cloud-amd64-ssh
+  distro: debian
+  release: bookworm
+  arch: amd64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 12 Bookworm Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-bookworm-cloud-arm64-ssh
+  distro: debian
+  release: bookworm
+  arch: arm64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 12 Bookworm Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-bookworm-default-amd64-ssh
+  distro: debian
+  release: bookworm
+  arch: amd64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 12 Bookworm Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-bookworm-default-arm64-ssh
+  distro: debian
+  release: bookworm
+  arch: arm64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 12 Bookworm Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+# Debian Bullseye
+- name: debian-bullseye-cloud-amd64-ssh
+  distro: debian
+  release: bullseye
+  arch: amd64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 11 Bullseye Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-bullseye-cloud-arm64-ssh
+  distro: debian
+  release: bullseye
+  arch: arm64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 11 Bullseye Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-bullseye-default-amd64-ssh
+  distro: debian
+  release: bullseye
+  arch: amd64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 11 Bullseye Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-bullseye-default-arm64-ssh
+  distro: debian
+  release: bullseye
+  arch: arm64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 11 Bullseye Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+# Debian Forky
+- name: debian-forky-cloud-amd64-ssh
+  distro: debian
+  release: forky
+  arch: amd64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 13 Forky Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-forky-cloud-arm64-ssh
+  distro: debian
+  release: forky
+  arch: arm64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 13 Forky Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-forky-default-amd64-ssh
+  distro: debian
+  release: forky
+  arch: amd64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 13 Forky Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-forky-default-arm64-ssh
+  distro: debian
+  release: forky
+  arch: arm64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 13 Forky Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+# Debian Trixie
+- name: debian-trixie-cloud-amd64-ssh
+  distro: debian
+  release: trixie
+  arch: amd64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 14 Trixie Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-trixie-cloud-arm64-ssh
+  distro: debian
+  release: trixie
+  arch: arm64
+  variant: cloud
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 14 Trixie Cloud LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-trixie-default-amd64-ssh
+  distro: debian
+  release: trixie
+  arch: amd64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 14 Trixie Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
+
+- name: debian-trixie-default-arm64-ssh
+  distro: debian
+  release: trixie
+  arch: arm64
+  variant: default
+  packages:
+    - curl
+    - wget
+    - vim
+    - htop
+    - net-tools
+    - sudo
+    - git
+  files:
+    /etc/motd: |
+      Welcome to Debian 14 Trixie Default LXC Container with SSH
+      Root password: password
+      SSH is enabled on port 22
+  actions:
+    - type: post-files
+      action: run
+      options:
+        command: "apt-get update && apt-get upgrade -y"
